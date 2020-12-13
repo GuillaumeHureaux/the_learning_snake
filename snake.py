@@ -7,11 +7,12 @@ from itertools import product
 # %%
 
 class Snake():
-    def __init__(self):
-        self.x = 10
-        self.y = 10
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
         self.body = [(self.x, self.y)]
         self.face = 'up'
+        self.last_move = 'up'
     
     def move(self):
         if self.face == 'up':
@@ -22,23 +23,24 @@ class Snake():
             self.x -= 1
         if self.face == 'right':
             self.x += 1
+        self.last_move = self.face
         self.body.insert(0, (self.x, self.y))
         self.body = self.body[:-1]
     
     def face_right(self, event):
-        if self.face != 'left':
+        if self.last_move != 'left':
             self.face = 'right'
     
     def face_left(self, event):
-        if self.face != 'right':
+        if self.last_move != 'right':
             self.face = 'left'
 
     def face_up(self, event):
-        if self.face != 'down':
+        if self.last_move != 'down':
             self.face = 'up'
 
     def face_down(self, event):
-        if self.face != 'up':
+        if self.last_move != 'up':
             self.face = 'down'
 
     def __len__(self):
@@ -46,6 +48,12 @@ class Snake():
     
     def grow(self):
         self.body.append(self.body[-1])
+
+class Apple():
+    def __init__(self, x_max, y_max, snake_body):
+        possibilities = set(product(range(x_max), range(y_max))).difference(set(snake_body))
+
+        self.x, self.y = random.choice(list(possibilities))        
 
 
 class Game():
@@ -73,8 +81,8 @@ class Game():
     
     def init_new_game(self):
         self.flag = 1
-        self.snake = Snake()
-        self.add_apple()
+        self.snake = Snake(int((self.x_max - 1) / 2), int((self.y_max - 1) / 2))
+        self.apple = Apple(self.x_max, self.y_max, self.snake.body)
 
         self.waiting_frame.grid_remove()
 
@@ -92,30 +100,21 @@ class Game():
 
         self.loop_game()
     
-    def add_apple(self):
-        possibilities = set(product(range(self.x_max), range(self.y_max))).difference(set(self.snake.body))
-        self.apple = random.choice(list(possibilities))
 
     def loop_game(self):
-        self.can.delete('all')
-    
         self.snake.move()
 
         if self.snake.x < 0 or self.snake.x >= self.x_max or self.snake.y < 0 or self.snake.y >= self.y_max:
             self.flag = 0
-            print('lost')
             self.show_pre_game_window()
         
         if len(self.snake) > 1 and (self.snake.x, self.snake.y) in self.snake.body[1:]:
             self.flag = 0
-            print('lost')
-            print(self.snake.x, self.snake.y)
-            print(self.snake.body)
             self.show_pre_game_window()
         
-        if (self.snake.x, self.snake.y) == self.apple:
+        if (self.snake.x, self.snake.y) == (self.apple.x, self.apple.y):
             self.snake.grow()
-            self.add_apple()
+            self.apple = Apple(self.x_max, self.y_max, self.snake.body)
         
         if self.flag != 0:
             self.update_canvas()
@@ -123,9 +122,10 @@ class Game():
         
 
     def update_canvas(self):
+        self.can.delete('all')
         square_size = self.canvas_size[0] / self.x_max, self.canvas_size[1] / self.y_max
 
-        self.can.create_oval(self.apple[0] * square_size[0], self.apple[1] * square_size[1], (self.apple[0] + 1) * square_size[0], (self.apple[1] + 1) * square_size[1],
+        self.can.create_oval(self.apple.x * square_size[0], self.apple.y * square_size[1], (self.apple.x + 1) * square_size[0], (self.apple.y + 1) * square_size[1],
                                  outline='red', fill='red')
         
         head = self.snake.body[0]
@@ -136,19 +136,6 @@ class Game():
         for elem in self.snake.body[1:]:
             self.can.create_oval(elem[0] * square_size[0], elem[1] * square_size[1], (elem[0] + 1) * square_size[0], (elem[1] + 1) * square_size[1],
                                  outline='green', fill='grey')
-    
-        
-        
-
-
-        
-        
-        
-    
-
-
-
-
 
 
 # %%
